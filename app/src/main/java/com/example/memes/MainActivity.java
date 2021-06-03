@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import cn.sharesdk.framework.Platform;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.FormBody;
@@ -56,12 +55,14 @@ public class MainActivity extends AppCompatActivity {
     private View view5;
     private View view6;
     private View view7;
+    private View view8;
+    private View view9;
     private ArrayList<ImageItem> selImageList;
-    private int maxImgCount = 1;;
+    private int maxImgCount = 1;
     public static final int REQUEST_CODE_SELECT = 100;
     public static final int REQUEST_CODE_PREVIEW = 101;
     private OkHttpClient okHttpClient;
-    private static String currentIP = "192.168.1.103";
+    private static String currentIP = StaticVar.currentIP;
 
 
     @Override
@@ -88,6 +89,9 @@ public class MainActivity extends AppCompatActivity {
         view5 = layoutInflater.inflate(R.layout.girdview_layout,null);
         view6 = layoutInflater.inflate(R.layout.girdview_layout,null);
         view7 = layoutInflater.inflate(R.layout.girdview_layout,null);
+        view8 = layoutInflater.inflate(R.layout.girdview_layout,null);
+        view9 = layoutInflater.inflate(R.layout.girdview_layout,null);
+
         initGetGridView((GridView) view1,"http://"+currentIP+":8080/picController/findAllPic");
         initGridView((GridView) view2,"http://"+currentIP+":8080/picController/findPicByCid",(long)2);
         initGridView((GridView) view3,"http://"+currentIP+":8080/picController/findPicByCid",(long)3);
@@ -95,6 +99,10 @@ public class MainActivity extends AppCompatActivity {
         initGridView((GridView) view5,"http://"+currentIP+":8080/picController/findPicByCid",(long)5);
         initGridView((GridView) view6,"http://"+currentIP+":8080/picController/findPicByCid",(long)6);
         initGridView((GridView) view7,"http://"+currentIP+":8080/picController/findPicByCid",(long)1);
+        initGetGridView((GridView)view8,"http://"+currentIP+":8080/picController/querydownload");
+        initGridView2((GridView) view9,"http://"+currentIP+":8080/picController/findPicByUid",StaticVar.currentUserID);
+
+
         views.add(view1);
         views.add(view2);
         views.add(view3);
@@ -102,6 +110,9 @@ public class MainActivity extends AppCompatActivity {
         views.add(view5);
         views.add(view6);
         views.add(view7);
+        views.add(view8);
+        views.add(view9);
+
         viewPager.setAdapter(new ViewPagerAdapter(views));
         viewPager.setCurrentItem(0);
         viewPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
@@ -168,6 +179,14 @@ public class MainActivity extends AppCompatActivity {
                         }
                     });
                 }
+                else if(position==7){
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            initGetGridView((GridView)view8,"http://"+currentIP+":8080/picController/querydownload");
+                        }
+                    });
+                }
             }
 
             @Override
@@ -181,6 +200,40 @@ public class MainActivity extends AppCompatActivity {
         final Gson gson = new Gson();
         RequestBody requestBody = new FormBody.Builder()
                 .add("cid",String.valueOf(cid))
+                .build();
+        Request request = new Request.Builder().url(url).post(requestBody).build();
+        final String[] res = new String[1];
+        Call call = okHttpClient.newCall(request);
+        call.enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e("here", e.toString());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                Log.e("here","post请求接收");
+                res[0] = response.body().string();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Type type = new TypeToken<List<PictureEntity>>(){}.getType();
+                        List<PictureEntity> pictureEntityList = gson.fromJson(res[0],type);
+                        GridViewAdapter gridViewAdapter = new GridViewAdapter(MainActivity.this);
+                        gridViewAdapter.setImages(pictureEntityList);
+                        gridView.setAdapter(gridViewAdapter);
+                    }
+                });
+            }
+        });
+
+
+    }
+
+    public void initGridView2(final GridView gridView, String url, Long uid)  {
+        final Gson gson = new Gson();
+        RequestBody requestBody = new FormBody.Builder()
+                .add("uid",String.valueOf(uid))
                 .build();
         Request request = new Request.Builder().url(url).post(requestBody).build();
         final String[] res = new String[1];
@@ -251,6 +304,8 @@ public class MainActivity extends AppCompatActivity {
         textViewList.add((TextView)findViewById(R.id.Penguin));
         textViewList.add((TextView)findViewById(R.id.Cat));
         textViewList.add((TextView)findViewById(R.id.other));
+        textViewList.add((TextView)findViewById(R.id.rklist));
+        textViewList.add((TextView)findViewById(R.id.favorite));
         for(int i =0 ; i<textViewList.size();i++){
             final int finalI = i;
             textViewList.get(i).setOnClickListener(new View.OnClickListener() {
@@ -259,11 +314,7 @@ public class MainActivity extends AppCompatActivity {
                     viewPager.setCurrentItem(finalI);
                 }
             });
-
         }
-
-
-
     }
 
     @Override

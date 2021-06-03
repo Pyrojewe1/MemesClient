@@ -1,13 +1,18 @@
 package com.example.memes;
 
 public class PictureEntity {
-
         private Long pid;
-
         private String pname;
-
         private String pdetails;
+        private int download;
 
+    public int getDownload() {
+        return download;
+    }
+
+    public void setDownload(int download) {
+        this.download = download;
+    }
 
     public Long getPid() {
         return pid;
